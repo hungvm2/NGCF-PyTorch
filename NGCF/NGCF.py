@@ -121,12 +121,13 @@ class NGCF(nn.Module):
             sum_embeddings = torch.matmul(side_embeddings, self.weight_dict['W_gc_%d' % k]) \
                                              + self.weight_dict['b_gc_%d' % k]
 
-            # bi messages of neighbors.
-            # element-wise product
-            bi_embeddings = torch.mul(ego_embeddings, side_embeddings)
-            # transformed bi messages of neighbors.
-            bi_embeddings = torch.matmul(bi_embeddings, self.weight_dict['W_bi_%d' % k]) \
-                                            + self.weight_dict['b_bi_%d' % k]
+            if self.experiment_mode != "no-bi":
+                # bi messages of neighbors.
+                # element-wise product
+                bi_embeddings = torch.mul(ego_embeddings, side_embeddings)
+                # transformed bi messages of neighbors.
+                bi_embeddings = torch.matmul(bi_embeddings, self.weight_dict['W_bi_%d' % k]) \
+                                                + self.weight_dict['b_bi_%d' % k]
 
             # non-linear activation.
             if self.experiment_mode == "no-bi":

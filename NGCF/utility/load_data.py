@@ -199,6 +199,12 @@ class Data(object):
 
         return users, pos_items, neg_items
 
+    def get_pos_items_by_users(self, users):
+        pos_items = {}
+        for u in users:
+            pos_items[u] = self.train_items[u][:20]
+        return pos_items
+
     def get_num_users_items(self):
         return self.n_users, self.n_items
 

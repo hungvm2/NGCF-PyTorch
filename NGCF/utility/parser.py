@@ -66,4 +66,6 @@ def parse_args():
     parser.add_argument('--mode', nargs='?', default='train',
                         help='Train or Test mode')
 
+    parser.add_argument('--prefix', nargs='?', default='',
+                        help='Prefix for saving weights')
     return parser.parse_args()

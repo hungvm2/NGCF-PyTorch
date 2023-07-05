@@ -25,6 +25,7 @@ class NGCF(nn.Module):
 
         self.layers = eval(args.layer_size)
         self.decay = eval(args.regs)[0]
+        self.experiment_mode = args.prefix
 
         """
         *********************************************************
@@ -110,6 +111,8 @@ class NGCF(nn.Module):
                                     self.embedding_dict['item_emb']], 0)
 
         all_embeddings = [ego_embeddings]
+        if self.experiment_mode == "no-skip-connection":
+            all_embeddings = []
 
         for k in range(len(self.layers)):
             side_embeddings = torch.sparse.mm(A_hat, ego_embeddings)
@@ -126,7 +129,12 @@ class NGCF(nn.Module):
                                             + self.weight_dict['b_bi_%d' % k]
 
             # non-linear activation.
-            ego_embeddings = nn.LeakyReLU(negative_slope=0.2)(sum_embeddings + bi_embeddings)
+            if self.experiment_mode == "no-bi":
+                ego_embeddings = nn.LeakyReLU(negative_slope=0.2)(sum_embeddings)
+            elif self.experiment_mode == "gelu":
+                ego_embeddings = nn.GELU()(sum_embeddings + bi_embeddings)
+            else:
+                ego_embeddings = nn.LeakyReLU(negative_slope=0.2)(sum_embeddings + bi_embeddings)
 
             # message dropout.
             ego_embeddings = nn.Dropout(self.mess_dropout[k])(ego_embeddings)

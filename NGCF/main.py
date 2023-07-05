@@ -14,7 +14,7 @@ from utility.batch_test import *
 from utility.helper import *
 import numpy as np
 from datetime import datetime
-
+import pickle
 warnings.filterwarnings('ignore')
 from time import time
 
@@ -30,23 +30,23 @@ if __name__ == '__main__':
 
     args.device = torch.device('cuda:' + str(args.gpu_id))
 
-    plain_adj, norm_adj, mean_adj = data_generator.get_adj_mat()
-
-    args.node_dropout = eval(args.node_dropout)
-    args.mess_dropout = eval(args.mess_dropout)
-
-    model = NGCF(data_generator.n_users,
-                 data_generator.n_items,
-                 norm_adj,
-                 args).to(args.device)
-
-    loss_loger, pre_loger, rec_loger, ndcg_loger, hit_loger = [], [], [], [], []
     if args.mode == "train":
         t0 = time()
         """
         *********************************************************
         Train.
         """
+        plain_adj, norm_adj, mean_adj = data_generator.get_adj_mat()
+
+        args.node_dropout = eval(args.node_dropout)
+        args.mess_dropout = eval(args.mess_dropout)
+
+        model = NGCF(data_generator.n_users,
+                     data_generator.n_items,
+                     norm_adj,
+                     args).to(args.device)
+
+        loss_loger, pre_loger, rec_loger, ndcg_loger, hit_loger = [], [], [], [], []
         cur_best_pre_0, stopping_step = 0, 0
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
             t2 = time()
             users_to_test = list(data_generator.test_set.keys())
-            print(users_to_test)
+            # print(users_to_test)
             ret = test(model, users_to_test, drop_flag=False)
 
             t3 = time()
@@ -110,22 +110,28 @@ if __name__ == '__main__':
                                                                         cur_best_pre_0,
                                                                         stopping_step,
                                                                         expected_order='acc',
-                                                                        flag_step=5)
+                                                                        flag_step=20)
 
             # *********************************************************
             # early stopping when cur_best_pre_0 is decreasing for ten successive steps.
-            if should_stop:
-                break
+            # if should_stop:
+            #     break
 
             # *********************************************************
             # save the user & item embeddings for pretraining.
             if args.save_flag == 1:
                 torch.save(model.state_dict(), args.weights_path + f'{args.dataset}_latest.pkl')
-                print('save the latest weights in path: ', args.weights_path + f'{args.dataset}_latest.pkl')
+                latest_name = f"{args.dataset}_latest.pkl"
+                if args.prefix:
+                   latest_name = f'{args.prefix}_{args.dataset}_latest.pkl'
+                print('save the latest weights in path: ', args.weights_path + latest_name)
                 if ret['recall'][0] != cur_best_pre_0:
                     continue
-                torch.save(model.state_dict(), args.weights_path + f'{args.dataset}_best.pkl')
-                print('save the best weights in path: ', args.weights_path + f'{args.dataset}_best.pkl')
+                best_name = f"{args.dataset}_best.pkl"
+                if args.prefix:
+                   best_name = f'{args.prefix}_{args.dataset}_best.pkl'
+                torch.save(model.state_dict(), args.weights_path + best_name)
+                print('save the best weights in path: ', args.weights_path + best_name)
 
         recs = np.array(rec_loger)
         pres = np.array(pre_loger)
@@ -142,16 +148,31 @@ if __name__ == '__main__':
                       '\t'.join(['%.5f' % r for r in ndcgs[idx]]))
         print(final_perf)
         print("Total time: ", time() - total_start_time)
-    else:
-        state_dict = load_pretrained_data(args.weights_path + f'{args.dataset}_best.pkl')
+        loss_curve_name = f"{args.dataset}_loss.pkl"
+        if args.prefix:
+            loss_curve_name = f'{args.prefix}_{args.dataset}_loss.pkl'
+        with open(loss_curve_name, 'wb') as f:
+            pickle.dump(loss_loger, f)
+    elif args.mode == "test":
+        print("========== TESTING MODE ==========")
+        plain_adj, norm_adj, mean_adj = data_generator.get_adj_mat()
+
+        model = NGCF(data_generator.n_users,
+                     data_generator.n_items,
+                     norm_adj,
+                     args).to(args.device)
+
+        pre_loger, rec_loger, ndcg_loger, hit_loger = [], [], [], []
+        best_name = f"{args.dataset}_best.pkl"
+        if args.prefix:
+            best_name = f'{args.prefix}_{args.dataset}_best.pkl'
+        state_dict = load_pretrained_data(args.weights_path + best_name)
         model.load_state_dict(state_dict)
 
-        t2 = time()
-        users_to_test = list(data_generator.test_set.keys())
-        print(users_to_test)
+        users_to_test = list(data_generator.test_set.keys())[:10]
+        # print(users_to_test)
         ret = test(model, users_to_test, drop_flag=False)
 
-        t3 = time()
         rec_loger.append(ret['recall'])
         pre_loger.append(ret['precision'])
         ndcg_loger.append(ret['ndcg'])
@@ -171,3 +192,31 @@ if __name__ == '__main__':
                       '\t'.join(['%.5f' % r for r in hit[idx]]),
                       '\t'.join(['%.5f' % r for r in ndcgs[idx]]))
         print(final_perf)
+    else:
+        from sklearn.manifold import TSNE
+        print("========== VISUALIZING MODE ==========")
+        plain_adj, norm_adj, mean_adj = data_generator.get_adj_mat()
+
+        model = NGCF(data_generator.n_users,
+                     data_generator.n_items,
+                     norm_adj,
+                     args).to(args.device)
+
+        pre_loger, rec_loger, ndcg_loger, hit_loger = [], [], [], []
+        best_name = f"{args.dataset}_best.pkl"
+        if args.prefix:
+            best_name = f'{args.prefix}_{args.dataset}_best.pkl'
+        state_dict = load_pretrained_data(args.weights_path + best_name)
+        model.load_state_dict(state_dict)
+
+        users_to_test = list(data_generator.test_set.keys())[:10]
+        print(users_to_test)
+
+        pos_items_by_u = data_generator.get_pos_items_by_users(users_to_test)
+        u_g_embeddings_by_u = {}
+        pos_i_g_embeddings_by_u = {}
+        for u, pos_items in pos_items_by_u.items():
+            u_g_embeddings, pos_i_g_embeddings, _ = model.forward([u], pos_items, [])
+            u_g_embeddings_by_u[u] = u_g_embeddings
+            pos_i_g_embeddings_by_u[u] = pos_i_g_embeddings
+

@@ -27,15 +27,26 @@ def ranklist_by_heapq(user_pos_test, test_items, rating, Ks):
         item_score[i] = rating[i]
 
     K_max = max(Ks)
+    K_min = min(Ks)
     K_max_item_score = heapq.nlargest(K_max, item_score, key=item_score.get)
 
     r = []
+    true_suggestion = {}
+    print("\nTop K=20 suggestion items: ", K_max_item_score[:K_min])
+    for i in K_max_item_score[:K_min]:
+        if i in user_pos_test:
+            true_suggestion[i] = True
+        else:
+            true_suggestion[i] = False
+
     for i in K_max_item_score:
         if i in user_pos_test:
             r.append(1)
         else:
             r.append(0)
     auc = 0.
+    print("If the suggestion is True?: ", true_suggestion)
+    print("\n")
     return r, auc
 
 def get_auc(item_score, user_pos_test):
@@ -153,7 +164,6 @@ def test(model, users_to_test, drop_flag=False, batch_test_flag=False):
                                                                   [],
                                                                   drop_flag=True)
                     i_rate_batch = model.rating(u_g_embeddings, pos_i_g_embeddings).detach().cpu()
-
                 rate_batch[:, i_start: i_end] = i_rate_batch
                 i_count += i_rate_batch.shape[1]
 
@@ -168,7 +178,11 @@ def test(model, users_to_test, drop_flag=False, batch_test_flag=False):
                                                               item_batch,
                                                               [],
                                                               drop_flag=False)
+                # print("u_g_embeddings: ", u_g_embeddings.shape)
+                # print("pos_i_g_embeddings: ", pos_i_g_embeddings.shape)
                 rate_batch = model.rating(u_g_embeddings, pos_i_g_embeddings).detach().cpu()
+                for i in range(len(user_batch)):
+                    print(f"\nScore of all items by user {user_batch[i]}: ", rate_batch[i])
             else:
                 u_g_embeddings, pos_i_g_embeddings, _ = model(user_batch,
                                                               item_batch,

@@ -159,7 +159,7 @@ if __name__ == '__main__':
 
         args.node_dropout = eval(args.node_dropout)
         args.mess_dropout = eval(args.mess_dropout)
-
+        user_testing_range = eval(args.user_test_range)
         model = NGCF(data_generator.n_users,
                      data_generator.n_items,
                      norm_adj,
@@ -172,7 +172,7 @@ if __name__ == '__main__':
         state_dict = load_pretrained_data(args.weights_path + best_name)
         model.load_state_dict(state_dict)
 
-        users_to_test = list(data_generator.test_set.keys())[:10]
+        users_to_test = list(data_generator.test_set.keys())[user_testing_range[0]:user_testing_range[1]]
         # print(users_to_test)
         ret = test(model, users_to_test, drop_flag=False)
 

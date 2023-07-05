@@ -68,4 +68,6 @@ def parse_args():
 
     parser.add_argument('--prefix', nargs='?', default='',
                         help='Prefix for saving weights')
+    parser.add_argument('--user_test_range', nargs='?', default='[0, 1]',
+                        help='User range for testing')
     return parser.parse_args()

@@ -146,6 +146,7 @@ class NGCF(nn.Module):
             all_embeddings += [norm_embeddings]
 
         all_embeddings = torch.cat(all_embeddings, 1)
+        # print(all_embeddings.shape)
         u_g_embeddings = all_embeddings[:self.n_user, :]
         i_g_embeddings = all_embeddings[self.n_user:, :]
 

@@ -57,9 +57,10 @@ python main.py --dataset gowalla --regs [1e-5] --embed_size 64 --layer_size [64,
 
 ## Test lại các kết quả với các bộ tham số đã train.
 ```bash
-# Testing mode: chọn --prefix ứng với kết quả của thí nghiệm tương ứng.
+# chọn --prefix ứng với weights của thí nghiệm tương ứng. VD: no-bi là sử dụng weights của thí nghiệm 5.
+# chọn --user_test_range là user trong danh sách muốn test. VD: [1,2] là muốn test user với ID = 1.
 cd NGCF
-python main.py --mode test --dataset gowalla --regs [1e-5] --embed_size 64 --layer_size [64,64,64] --verbose 1 --node_dropout [0.1] --mess_dropout [0.1,0.1,0.1] --gpu_id 0 --prefix no-bi
+python main.py --user_test_range [1,2] --mode test --dataset gowalla --regs [1e-5] --embed_size 64 --layer_size [64,64,64] --verbose 1 --node_dropout [0.1] --mess_dropout [0.1,0.1,0.1] --gpu_id 0 --prefix no-bi
 ```
 
 ## Các kết quả đã test trên tập Gowalla dataset.

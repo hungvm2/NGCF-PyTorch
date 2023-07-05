@@ -151,7 +151,7 @@ if __name__ == '__main__':
         loss_curve_name = f"{args.dataset}_loss.pkl"
         if args.prefix:
             loss_curve_name = f'{args.prefix}_{args.dataset}_loss.pkl'
-        with open(loss_curve_name, 'wb') as f:
+        with open("result/" + loss_curve_name, 'wb') as f:
             pickle.dump(loss_loger, f)
     elif args.mode == "test":
         print("========== TESTING MODE ==========")

@@ -120,10 +120,10 @@ if __name__ == '__main__':
             # *********************************************************
             # save the user & item embeddings for pretraining.
             if args.save_flag == 1:
-                torch.save(model.state_dict(), args.weights_path + f'{args.dataset}_latest.pkl')
                 latest_name = f"{args.dataset}_latest.pkl"
                 if args.prefix:
                    latest_name = f'{args.prefix}_{args.dataset}_latest.pkl'
+                torch.save(model.state_dict(), args.weights_path + latest_name)
                 print('save the latest weights in path: ', args.weights_path + latest_name)
                 if ret['recall'][0] != cur_best_pre_0:
                     continue
@@ -156,6 +156,9 @@ if __name__ == '__main__':
     elif args.mode == "test":
         print("========== TESTING MODE ==========")
         plain_adj, norm_adj, mean_adj = data_generator.get_adj_mat()
+
+        args.node_dropout = eval(args.node_dropout)
+        args.mess_dropout = eval(args.mess_dropout)
 
         model = NGCF(data_generator.n_users,
                      data_generator.n_items,

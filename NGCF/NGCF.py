@@ -138,7 +138,7 @@ class NGCF(nn.Module):
                 ego_embeddings = nn.LeakyReLU(negative_slope=0.2)(sum_embeddings + bi_embeddings)
 
             # message dropout.
-            ego_embeddings = nn.Dropout(self.mess_dropout[k])(ego_embeddings)
+            ego_embeddings = nn.Dropout(float(self.mess_dropout[k]))(ego_embeddings)
 
             # normalize the distribution of embeddings.
             norm_embeddings = F.normalize(ego_embeddings, p=2, dim=1)
